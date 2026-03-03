@@ -49,3 +49,38 @@
 (define-read-only (get-campaign-count)
   (var-get campaign-count)
 )
+
+;; ===== CAMPAIGN MANAGEMENT =====
+
+;; Check if campaign reached goal
+(define-read-only (is-goal-reached (campaign-id uint))
+  (match (map-get? campaigns campaign-id)
+    campaign (>= (get raised campaign) (get goal campaign))
+    false))
+
+;; Check if campaign is still active
+(define-read-only (is-campaign-active (campaign-id uint))
+  (match (map-get? campaigns campaign-id)
+    campaign (< block-height (get deadline campaign))
+    false))
+
+;; Get funding progress as percentage (0-100)
+(define-read-only (get-funding-progress (campaign-id uint))
+  (match (map-get? campaigns campaign-id)
+    campaign 
+    (let ((raised (get raised campaign))
+          (goal (get goal campaign)))
+      (if (is-eq goal u0) 
+        u0 
+        (/ (* raised u100) goal)))
+    u0))
+
+;; Get time remaining in blocks
+(define-read-only (get-time-remaining (campaign-id uint))
+  (match (map-get? campaigns campaign-id)
+    campaign 
+    (let ((deadline (get deadline campaign)))
+      (if (> deadline block-height)
+        (- deadline block-height)
+        u0))
+    u0))
